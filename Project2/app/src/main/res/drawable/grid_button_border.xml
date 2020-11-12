@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- https://stackoverflow.com/questions/7690416/android-border-for-button -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/grid_button_border"
+    android:shape="rectangle">
+
+    <solid android:color="#FFFFFF"/>
+
+    <stroke android:color="#000000"
+        android:width="2dp"/>
+</shape>
