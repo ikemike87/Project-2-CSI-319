@@ -1,5 +1,6 @@
 package com.example.project2
 
+import android.content.Context
 import android.graphics.Color.parseColor
 import android.os.Bundle
 import android.os.Handler
@@ -10,21 +11,61 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageButton
+import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.coroutines.android.awaitFrame
 
-private const val TAG = "gridfragment"
+private const val TAG = "grid_fragment"
+private const val ARG_ALIVE_LIST = "Alive_List"
 
 class GridFragment : Fragment() {
 
-    private lateinit var resetButton: ImageButton
-    private lateinit var startButton: ImageButton
-    private lateinit var stopButton: ImageButton
+    private lateinit var resetImageButton: ImageButton
+    private lateinit var startImageButton: ImageButton
+    private lateinit var stopImageButton: ImageButton
+    private lateinit var cloneButton: Button
     private lateinit var recycler: RecyclerView
     private lateinit var gridViewModel: GridViewModel
+    private var aliveList: ArrayList<Int>? = null
+    private var gameState = false
+
+    interface Callbacks {
+        fun onCloneButtonClicked(aliveList: ArrayList<Int>?)
+    }
+
+    private var callbacks: Callbacks? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        aliveList = arguments?.getIntegerArrayList(ARG_ALIVE_LIST)
+        //https://proandroiddev.com/backpress-handling-in-android-fragments-the-old-and-the-new-method-c41d775fb776
+        activity?.onBackPressedDispatcher?.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                gameState = false
+                gridViewModel.gridAliveList = gridViewModel.oldAliveList
+                for (position in gridViewModel.gridAliveList) {
+                    gridViewModel.gridItemList[position].isAlive = true
+                    recycler.adapter?.notifyItemChanged(position)
+                }
+                isEnabled = false
+                activity?.onBackPressed()
+
+            }
+        })
+    }
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        callbacks = context as Callbacks?
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        callbacks = null
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -34,26 +75,52 @@ class GridFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_grid, container, false)
 
         recycler = view.findViewById(R.id.grid_recycler)
-        resetButton = view.findViewById(R.id.reset_button)
-        startButton = view.findViewById(R.id.start_button)
-        stopButton = view.findViewById(R.id.stop_button)
+        resetImageButton = view.findViewById(R.id.reset_image_button)
+        startImageButton = view.findViewById(R.id.start_image_button)
+        stopImageButton = view.findViewById(R.id.stop_image_button)
+        cloneButton = view.findViewById(R.id.clone_button)
 
         recycler.layoutManager = GridLayoutManager(context, 20)
         recycler.adapter = GridAdapter()
 
         gridViewModel = ViewModelProvider(this).get(GridViewModel::class.java)
 
+        if (aliveList != null)
+        {
+            gridViewModel.oldAliveList = gridViewModel.gridAliveList
+            gridViewModel.gridAliveList = aliveList as ArrayList<Int>
+            for (position in gridViewModel.gridAliveList) {
+                gridViewModel.gridItemList[position].isAlive = true
+                recycler.adapter?.notifyItemChanged(position)
+            }
+        }
+
         // make all alive slots dead
-        resetButton.setOnClickListener {
+        resetImageButton.setOnClickListener {
+            Log.d(TAG, "reset button pressed")
+            gameState = false
             gridViewModel.resetGrid()
             for (position in gridViewModel.gridAliveList) {
                 recycler.adapter?.notifyItemChanged(position)
             }
         }
-        startButton.setOnClickListener {
-                playOneGameCycle()
+
+        // set gameState to true
+        // start game
+        startImageButton.setOnClickListener {
+            gameState = true
+            playGame()
         }
-        stopButton.setOnClickListener {}
+
+        // stop game
+        // set gameState to false
+        stopImageButton.setOnClickListener { gameState = false }
+
+        // clone activity
+        cloneButton.setOnClickListener{
+            callbacks?.onCloneButtonClicked(gridViewModel.gridAliveList)
+            Toast.makeText(activity, "Cloned" ,Toast.LENGTH_SHORT).show()
+        }
 
         return view
     }
@@ -87,7 +154,6 @@ class GridFragment : Fragment() {
                 //https://stackoverflow.com/questions/18033260/set-background-color-android
                 holder.button.setBackgroundColor(parseColor("#000000"))
             } else {
-                //https://stackoverflow.com/questions/7815689/how-do-you-obtain-a-drawable-object-from-a-resource-id-in-android-package
                 holder.button.setBackgroundResource(R.drawable.grid_button_border)
             }
 
@@ -103,9 +169,20 @@ class GridFragment : Fragment() {
         if (gridViewModel.gridItemList[position].isAlive) {
             gridViewModel.gridItemList[position].isAlive = false
             gridViewModel.gridAliveList.remove(position)
-        } else {
+        }
+        else {
             gridViewModel.gridItemList[position].isAlive = true
             gridViewModel.gridAliveList.add(position)
+        }
+    }
+
+    private fun playGame() {
+        //https://stackoverflow.com/questions/61023968/how-to-solve-handler-deprecated
+        if (gameState) {
+            Handler(Looper.getMainLooper()).postDelayed ({
+                playOneGameCycle()
+                playGame()
+            }, 100)
         }
     }
 
@@ -189,6 +266,17 @@ class GridFragment : Fragment() {
         }
         for ( position in gridViewModel.deadNeighbors) {
             recycler.adapter?.notifyItemChanged(position)
+        }
+    }
+
+    companion object {
+        fun newInstance(aliveList: ArrayList<Int>?): GridFragment {
+            val args = Bundle().apply {
+                putIntegerArrayList(ARG_ALIVE_LIST, aliveList)
+            }
+            return GridFragment().apply {
+                arguments = args
+            }
         }
     }
 }

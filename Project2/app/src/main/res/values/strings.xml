@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Project 2</string>
-    <string name="content_description_image_button">Grid Slot</string>
+    <string name="content_desc_reset_image_button">Reset Button</string>
+    <string name="content_desc_play_image_button">Play Button</string>
+    <string name="content_desc_stop_image_button">Stop Button</string>
+    <string name="clone_button">Clone</string>
 </resources>

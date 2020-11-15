@@ -16,31 +16,42 @@
         android:orientation="horizontal">
 
         <ImageButton
-            android:id="@+id/reset_button"
+            android:id="@+id/reset_image_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="5dp"
             android:background="@drawable/menu_button_border"
+            android:contentDescription="@string/content_desc_reset_image_button"
             android:padding="10dp"
             android:src="@drawable/reset" />
 
         <ImageButton
-            android:id="@+id/start_button"
+            android:id="@+id/start_image_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="5dp"
             android:background="@drawable/menu_button_border"
+            android:contentDescription="@string/content_desc_play_image_button"
             android:padding="10dp"
             android:src="@drawable/start" />
 
         <ImageButton
-            android:id="@+id/stop_button"
+            android:id="@+id/stop_image_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:background="@drawable/menu_button_border"
+            android:contentDescription="@string/content_desc_stop_image_button"
+            android:padding="10dp"
+            android:src="@drawable/stop" />
+
+        <Button
+            android:id="@+id/clone_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="5dp"
             android:background="@drawable/menu_button_border"
             android:padding="10dp"
-            android:src="@drawable/stop" />
+            android:text="@string/clone_button" />
     </LinearLayout>
-
 </LinearLayout>

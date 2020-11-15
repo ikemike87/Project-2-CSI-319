@@ -4,7 +4,8 @@ import androidx.lifecycle.ViewModel
 
 class GridViewModel : ViewModel() {
     var gridItemList = mutableListOf<GridSlot>()
-    var gridAliveList = mutableListOf<Int>()
+    var gridAliveList = arrayListOf<Int>()
+    var oldAliveList = arrayListOf<Int>()
     var newAliveState = mutableListOf<Boolean>()
     var newNeighborState = mutableListOf<Boolean>()
     var deadNeighbors = mutableSetOf<Int>()
