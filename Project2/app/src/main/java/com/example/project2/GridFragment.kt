@@ -1,6 +1,6 @@
 package com.example.project2
 
-import android.content.Context
+import android.content.Intent
 import android.graphics.Color.parseColor
 import android.os.Bundle
 import android.os.Handler
@@ -12,14 +12,13 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 private const val TAG = "grid_fragment"
-private const val ARG_ALIVE_LIST = "Alive_List"
+private const val EXTRA_ALIVE_LIST = "Grid_List"
 
 class GridFragment : Fragment() {
 
@@ -29,43 +28,7 @@ class GridFragment : Fragment() {
     private lateinit var cloneButton: Button
     private lateinit var recycler: RecyclerView
     private lateinit var gridViewModel: GridViewModel
-    private var aliveList: ArrayList<Int>? = null
     private var gameState = false
-
-    interface Callbacks {
-        fun onCloneButtonClicked(aliveList: ArrayList<Int>?)
-    }
-
-    private var callbacks: Callbacks? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        aliveList = arguments?.getIntegerArrayList(ARG_ALIVE_LIST)
-        //https://proandroiddev.com/backpress-handling-in-android-fragments-the-old-and-the-new-method-c41d775fb776
-        activity?.onBackPressedDispatcher?.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                gameState = false
-                gridViewModel.gridAliveList = gridViewModel.oldAliveList
-                for (position in gridViewModel.gridAliveList) {
-                    gridViewModel.gridItemList[position].isAlive = true
-                    recycler.adapter?.notifyItemChanged(position)
-                }
-                isEnabled = false
-                activity?.onBackPressed()
-
-            }
-        })
-    }
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        callbacks = context as Callbacks?
-    }
-
-    override fun onDetach() {
-        super.onDetach()
-        callbacks = null
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -85,10 +48,10 @@ class GridFragment : Fragment() {
 
         gridViewModel = ViewModelProvider(this).get(GridViewModel::class.java)
 
-        if (aliveList != null)
-        {
-            gridViewModel.oldAliveList = gridViewModel.gridAliveList
-            gridViewModel.gridAliveList = aliveList as ArrayList<Int>
+        val aliveList = arguments?.getIntArray(EXTRA_ALIVE_LIST)
+
+        if (aliveList != null) {
+            gridViewModel.gridAliveList = aliveList.toMutableList()
             for (position in gridViewModel.gridAliveList) {
                 gridViewModel.gridItemList[position].isAlive = true
                 recycler.adapter?.notifyItemChanged(position)
@@ -97,7 +60,6 @@ class GridFragment : Fragment() {
 
         // make all alive slots dead
         resetImageButton.setOnClickListener {
-            Log.d(TAG, "reset button pressed")
             gameState = false
             gridViewModel.resetGrid()
             for (position in gridViewModel.gridAliveList) {
@@ -108,6 +70,9 @@ class GridFragment : Fragment() {
         // set gameState to true
         // start game
         startImageButton.setOnClickListener {
+            for (position in gridViewModel.gridAliveList) {
+                Log.d(TAG, "$position")
+            }
             gameState = true
             playGame()
         }
@@ -118,7 +83,9 @@ class GridFragment : Fragment() {
 
         // clone activity
         cloneButton.setOnClickListener{
-            callbacks?.onCloneButtonClicked(gridViewModel.gridAliveList)
+            val intent = Intent(activity, MainActivity::class.java)
+            intent.putExtra(EXTRA_ALIVE_LIST, gridViewModel.gridAliveList.toIntArray())
+            startActivity(intent)
             Toast.makeText(activity, "Cloned" ,Toast.LENGTH_SHORT).show()
         }
 
@@ -270,9 +237,9 @@ class GridFragment : Fragment() {
     }
 
     companion object {
-        fun newInstance(aliveList: ArrayList<Int>?): GridFragment {
+        fun newInstance(aliveList: IntArray?): GridFragment {
             val args = Bundle().apply {
-                putIntegerArrayList(ARG_ALIVE_LIST, aliveList)
+                putIntArray(EXTRA_ALIVE_LIST, aliveList)
             }
             return GridFragment().apply {
                 arguments = args
