@@ -1,7 +1,17 @@
 package com.example.project2
 
+import android.animation.Animator
+import android.animation.AnimatorInflater
+import android.animation.AnimatorSet
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.Color.parseColor
+import android.graphics.PorterDuff
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.ShapeDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -9,16 +19,16 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ImageButton
-import android.widget.Toast
+import android.widget.*
+import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 private const val TAG = "grid_fragment"
-private const val EXTRA_ALIVE_LIST = "Grid_List"
+private const val EXTRA_ALIVE_LIST = "Alive_List"
+private const val EXTRA_SAVE = "Open_Saves"
 
 class GridFragment : Fragment() {
 
@@ -26,9 +36,41 @@ class GridFragment : Fragment() {
     private lateinit var startImageButton: ImageButton
     private lateinit var stopImageButton: ImageButton
     private lateinit var cloneButton: Button
+    private lateinit var saveImageButton: ImageButton
+    private lateinit var openButton: Button
+    private lateinit var deadColorSpinner: Spinner
+    private lateinit var aliveColorSpinner: Spinner
     private lateinit var recycler: RecyclerView
     private lateinit var gridViewModel: GridViewModel
+    private var aliveColor = "Black"
+    private var deadColor = "White"
     private var gameState = false
+
+    // class for alive color spinner changes color of alive cells
+    private inner class AliveColorSpinner : AdapterView.OnItemSelectedListener {
+        override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
+            aliveColor = parent.getItemAtPosition(pos).toString()
+            gameState = false
+            for ( position in gridViewModel.gridAliveList ) {
+                recycler.adapter?.notifyItemChanged(position)
+            }
+        }
+
+        override fun onNothingSelected(parent: AdapterView<*>?) {}
+    }
+
+    // class for dead color spinner changes color of dead cells
+    private inner class DeadColorSpinner : AdapterView.OnItemSelectedListener {
+        override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
+            deadColor = parent.getItemAtPosition(pos).toString()
+            gameState = false
+            val drawable = ResourcesCompat.getDrawable(resources, R.drawable.grid_button_border, null) as GradientDrawable
+            drawable.setColor(parseColor(deadColor))
+            recycler.adapter?.notifyDataSetChanged()
+        }
+
+        override fun onNothingSelected(parent: AdapterView<*>?) {}
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -42,6 +84,29 @@ class GridFragment : Fragment() {
         startImageButton = view.findViewById(R.id.start_image_button)
         stopImageButton = view.findViewById(R.id.stop_image_button)
         cloneButton = view.findViewById(R.id.clone_button)
+        saveImageButton = view.findViewById(R.id.save_button)
+        openButton = view.findViewById(R.id.open_button)
+        deadColorSpinner = view.findViewById(R.id.dead_color_spinner)
+        aliveColorSpinner = view.findViewById(R.id.alive_color_spinner)
+
+        //https://developer.android.com/guide/topics/ui/controls/spinner
+        ArrayAdapter.createFromResource(
+            requireContext(), R.array.color_array_alive,
+            android.R.layout.simple_spinner_item
+        ).also { adapter ->
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            aliveColorSpinner.adapter = adapter
+            aliveColorSpinner.onItemSelectedListener = AliveColorSpinner()
+        }
+
+        ArrayAdapter.createFromResource(
+            requireContext(), R.array.color_array_dead,
+            android.R.layout.simple_spinner_item
+        ).also { adapter ->
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            deadColorSpinner.adapter = adapter
+            deadColorSpinner.onItemSelectedListener = DeadColorSpinner()
+        }
 
         recycler.layoutManager = GridLayoutManager(context, 20)
         recycler.adapter = GridAdapter()
@@ -82,11 +147,22 @@ class GridFragment : Fragment() {
         stopImageButton.setOnClickListener { gameState = false }
 
         // clone activity
-        cloneButton.setOnClickListener{
+        cloneButton.setOnClickListener {
             val intent = Intent(activity, MainActivity::class.java)
             intent.putExtra(EXTRA_ALIVE_LIST, gridViewModel.gridAliveList.toIntArray())
             startActivity(intent)
             Toast.makeText(activity, "Cloned" ,Toast.LENGTH_SHORT).show()
+        }
+
+        saveImageButton.setOnClickListener {
+            saveGrid()
+            Toast.makeText(activity, "Saved" ,Toast.LENGTH_SHORT).show()
+        }
+
+        openButton.setOnClickListener {
+            val intent = Intent(activity, MainActivity::class.java)
+            intent.putExtra(EXTRA_SAVE, "Save")
+            startActivity(intent)
         }
 
         return view
@@ -117,18 +193,37 @@ class GridFragment : Fragment() {
         override fun onBindViewHolder(holder: GridViewHolder, position: Int) {
             holder.bind(position)
 
+            val animation: Animator = AnimatorInflater.loadAnimator(requireContext(), R.animator.grid_pulse_animation)
+
             if (gridViewModel.gridItemList[position].isAlive) {
                 //https://stackoverflow.com/questions/18033260/set-background-color-android
-                holder.button.setBackgroundColor(parseColor("#000000"))
+                holder.button.setBackgroundColor(parseColor(aliveColor))
+                animation.apply {
+                    setTarget(holder.button)
+                    start()
+                }
+
             } else {
                 holder.button.setBackgroundResource(R.drawable.grid_button_border)
+                animation.apply {
+                    setTarget(holder.button)
+                    cancel()
+                    end()
+                }
             }
-
         }
 
         // 20x20 grid will always have 400 slots
         override fun getItemCount(): Int {
             return 400
+        }
+    }
+
+    private fun saveGrid() {
+        val fileCount = requireContext().fileList().count()
+        val aliveListString = gridViewModel.gridAliveList.toString().toByteArray()
+        activity?.openFileOutput("Save ${fileCount + 1}", Context.MODE_PRIVATE).use {
+            it?.write(aliveListString)
         }
     }
 
@@ -149,7 +244,7 @@ class GridFragment : Fragment() {
             Handler(Looper.getMainLooper()).postDelayed ({
                 playOneGameCycle()
                 playGame()
-            }, 100)
+            }, 1000)
         }
     }
 

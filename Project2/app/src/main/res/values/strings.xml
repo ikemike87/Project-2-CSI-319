@@ -1,7 +1,27 @@
 <resources>
     <string name="app_name">Project 2</string>
-    <string name="content_desc_reset_image_button">Reset Button</string>
-    <string name="content_desc_play_image_button">Play Button</string>
-    <string name="content_desc_stop_image_button">Stop Button</string>
+    <string name="content_desc_reset_image_button">Reset</string>
+    <string name="content_desc_play_image_button">Play</string>
+    <string name="content_desc_stop_image_button">Stop</string>
+    <string name="content_desc_save_image_button">Save</string>
     <string name="clone_button">Clone</string>
+    <string name="open_button">Open</string>
+    <string name="dead_color_spinner">Dead Color</string>
+    <string name="alive_color_spinner">Alive Color</string>
+
+    <string-array name="color_array_alive">
+        <item>Black</item>
+        <item>Blue</item>
+        <item>Red</item>
+        <item>Green</item>
+        <item>Yellow</item>
+    </string-array>
+
+    <string-array name="color_array_dead">
+        <item>White</item>
+        <item>Blue</item>
+        <item>Red</item>
+        <item>Green</item>
+        <item>Yellow</item>
+    </string-array>
 </resources>
