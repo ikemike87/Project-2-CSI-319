@@ -42,15 +42,12 @@ class GridFragment : Fragment() {
     private lateinit var aliveColorSpinner: Spinner
     private lateinit var recycler: RecyclerView
     private lateinit var gridViewModel: GridViewModel
-    private var aliveColor = "Black"
-    private var deadColor = "White"
-    private var gameState = false
 
     // class for alive color spinner changes color of alive cells
     private inner class AliveColorSpinner : AdapterView.OnItemSelectedListener {
         override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
-            aliveColor = parent.getItemAtPosition(pos).toString()
-            gameState = false
+            gridViewModel.aliveColor = parent.getItemAtPosition(pos).toString()
+            gridViewModel.gameState = false
             for ( position in gridViewModel.gridAliveList ) {
                 recycler.adapter?.notifyItemChanged(position)
             }
@@ -62,10 +59,10 @@ class GridFragment : Fragment() {
     // class for dead color spinner changes color of dead cells
     private inner class DeadColorSpinner : AdapterView.OnItemSelectedListener {
         override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
-            deadColor = parent.getItemAtPosition(pos).toString()
-            gameState = false
+            gridViewModel.deadColor = parent.getItemAtPosition(pos).toString()
+            gridViewModel.gameState = false
             val drawable = ResourcesCompat.getDrawable(resources, R.drawable.grid_button_border, null) as GradientDrawable
-            drawable.setColor(parseColor(deadColor))
+            drawable.setColor(parseColor(gridViewModel.deadColor))
             recycler.adapter?.notifyDataSetChanged()
         }
 
@@ -125,26 +122,24 @@ class GridFragment : Fragment() {
 
         // make all alive slots dead
         resetImageButton.setOnClickListener {
-            gameState = false
+            gridViewModel.gameState = false
             gridViewModel.resetGrid()
             for (position in gridViewModel.gridAliveList) {
                 recycler.adapter?.notifyItemChanged(position)
             }
+            gridViewModel.gridAliveList.clear()
         }
 
         // set gameState to true
         // start game
         startImageButton.setOnClickListener {
-            for (position in gridViewModel.gridAliveList) {
-                Log.d(TAG, "$position")
-            }
-            gameState = true
+            gridViewModel.gameState = true
             playGame()
         }
 
         // stop game
         // set gameState to false
-        stopImageButton.setOnClickListener { gameState = false }
+        stopImageButton.setOnClickListener { gridViewModel.gameState = false }
 
         // clone activity
         cloneButton.setOnClickListener {
@@ -197,7 +192,7 @@ class GridFragment : Fragment() {
 
             if (gridViewModel.gridItemList[position].isAlive) {
                 //https://stackoverflow.com/questions/18033260/set-background-color-android
-                holder.button.setBackgroundColor(parseColor(aliveColor))
+                holder.button.setBackgroundColor(parseColor(gridViewModel.aliveColor))
                 animation.apply {
                     setTarget(holder.button)
                     start()
@@ -240,7 +235,7 @@ class GridFragment : Fragment() {
 
     private fun playGame() {
         //https://stackoverflow.com/questions/61023968/how-to-solve-handler-deprecated
-        if (gameState) {
+        if (gridViewModel.gameState) {
             Handler(Looper.getMainLooper()).postDelayed ({
                 playOneGameCycle()
                 playGame()
@@ -249,6 +244,7 @@ class GridFragment : Fragment() {
     }
 
     private fun playOneGameCycle() {
+        // clear previous generation data
         gridViewModel.deadNeighbors.clear()
         gridViewModel.newAliveState.clear()
         gridViewModel.newNeighborState.clear()
@@ -323,10 +319,10 @@ class GridFragment : Fragment() {
         }
 
         // update ui
-        for ( position in oldGridAliveList) {
+        for (position in oldGridAliveList) {
             recycler.adapter?.notifyItemChanged(position)
         }
-        for ( position in gridViewModel.deadNeighbors) {
+        for (position in gridViewModel.deadNeighbors) {
             recycler.adapter?.notifyItemChanged(position)
         }
     }

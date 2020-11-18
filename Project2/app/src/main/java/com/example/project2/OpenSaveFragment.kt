@@ -12,7 +12,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 private const val EXTRA_ALIVE_LIST = "Alive_List"
-private const val TAG = "saveFragment"
 
 class OpenSaveFragment : Fragment() {
 
@@ -47,7 +46,7 @@ class OpenSaveFragment : Fragment() {
         init {
             button.setOnClickListener {
                 val intent = Intent(activity, MainActivity::class.java)
-                //intent.putExtra(EXTRA_ALIVE_LIST, getSaveData(button.text))
+                intent.putExtra(EXTRA_ALIVE_LIST, getSaveData(button.text.toString()))
                 startActivity(intent)
             }
         }
@@ -69,26 +68,20 @@ class OpenSaveFragment : Fragment() {
         }
     }
 
-    /*
+
     private fun getSaveData(fileName: String): IntArray {
-        var aliveList: IntArray
-        var aliveListString: String
+        var aliveList = mutableListOf<Int>()
 
         activity?.openFileInput(fileName).use { stream ->
             val text = stream?.bufferedReader().use {
                 it?.readText()
 
             }
-            text?.drop(1)
-            text?.dropLast(1)
-            if (text != null) {
-                aliveListString = text
+            val aliveListString = text?.drop(1)?.dropLast(1)?.split(", ")
+            for (string in aliveListString!!) {
+                aliveList.add(string.toInt())
             }
+            return aliveList.toIntArray()
         }
-
-        aliveList = aliveListString.to
-
-        return aliveList
     }
-    */
 }

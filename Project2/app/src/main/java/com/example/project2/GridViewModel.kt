@@ -9,10 +9,13 @@ class GridViewModel : ViewModel() {
     var newNeighborState = mutableListOf<Boolean>()
     var deadNeighbors = mutableSetOf<Int>()
     var neighborList = mutableListOf<Int>()
+    var aliveColor = "Black"
+    var deadColor = "White"
+    var gameState = false
 
     init {
         for ( i in 0..399 ) {
-            gridItemList.add(GridSlot(i, false))
+            gridItemList.add(GridSlot(false))
         }
     }
 
